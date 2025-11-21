@@ -9,7 +9,7 @@ WORKDIR /app
 COPY dist/ /usr/share/nginx/html/
 
 # 复制 nginx.conf 到镜像中
-# COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # 启动Nginx
 CMD ["nginx", "-g", "daemon off;"]
