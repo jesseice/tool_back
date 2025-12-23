@@ -1,9 +1,10 @@
 //启动服务 开一个接口 接受tag 收到后就执行deploy.sh脚本 纯node实现 不用其他框架
 const http = require('http');
 const { exec } = require('child_process');
+const path = require('path');
 const url = require('url');
 
-const PORT = 3001;
+const PORT = 3002;
 
 const server = http.createServer((req, res) => {
   // 设置 CORS 头
@@ -28,7 +29,6 @@ const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
 
   // 处理部署接口
-  if (parsedUrl.pathname === '/deploy' || parsedUrl.pathname === '/deploy/') {
     let tag = null;
 
     // 从 GET 参数获取 tag
@@ -44,6 +44,15 @@ const server = http.createServer((req, res) => {
       req.on('end', () => {
         try {
           const data = JSON.parse(body);
+          const challenge = data.challenge || data.CHALLENGE;
+          if (challenge) {
+            // 飞书地址验证，需在 1 秒内回传 challenge
+            res.writeHead(200, {
+              'Content-Type': 'application/json; charset=utf-8',
+            });
+            res.end(JSON.stringify({ challenge }));
+            return;
+          }
           tag = data.tag;
         } catch (e) {
           // 如果不是 JSON，尝试解析 URL encoded
@@ -53,7 +62,6 @@ const server = http.createServer((req, res) => {
         handleDeploy(tag, req, res);
       });
       return;
-    }
 
     handleDeploy(tag, req, res);
   } else {
@@ -129,7 +137,7 @@ function handleDeploy(tag, req, res) {
 }
 
 const main = async () => {
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`服务器启动成功，监听端口: ${PORT}`);
     console.log(`部署接口: http://localhost:${PORT}/deploy?tag=your-tag`);
     console.log(`或者 POST 到: http://localhost:${PORT}/deploy`);
